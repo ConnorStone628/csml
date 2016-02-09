@@ -1,0 +1,190 @@
+
+Saving the net class
+////////////////////////////////////////////////////////////////////////////////
+    // std::stringstream ss;
+
+    // data += "nodes{\n";
+    // for (unsigned int i = 0; i < this->nodes.size(); ++i){
+    //   for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+    //     //      data += this->nodes[i][n]->name + "{\n";
+    //     data += this->nodes[i][n]->Save();
+    //     //      data += "}\n";
+    //   }
+    // }
+    // data += "}\n";
+
+    // data += "synapses{\n";
+    // for (unsigned int i = 0; i < this->synapses.size(); ++i){
+    //   data += Convert("step",i);
+    //   for (unsigned int s = 0; s < this->synapses[i].size(); ++s){
+    //     data += "SYNAPSE{\n";
+    //     data += Convert("source_node", this->synapses[i][s]->source_node->name);
+    //     data += Convert("sink_node", this->synapses[i][s]->sink_node->name);
+    //     data += Convert("weight", *this->synapses[i][s]->weight);
+    //     data += Convert("weight_delta", *this->synapses[i][s]->weight_delta);
+    //     data += "}\n";
+    //   }
+    // }
+    // data += "}\n";
+
+loading hte net class
+////////////////////////////////////////////////////////////////////////////////
+    // std::string line, node_names;
+    // std::stringstream ss;
+    // std::ifstream f(file_name.c_str());
+    // // variables used to track the progress and store temporary data
+    // bool active, reading_nodes = false, reading_synapses = false, in_node = false, in_synapse = false;
+    // int layer, node_number, step = 0, step_in_synapse = 0;//jesse was here
+    // int source_layer, source_node_number, sink_layer, sink_node_number;
+    // double synapse_weight, synapse_weight_delta;
+
+    // // Clear the nodes so that it can refill everything
+    // for (unsigned int i = 0; i < this->nodes.size(); ++i ){
+    //   this->nodes[i].clear();
+    // }
+    // // Clear the synapses
+    // for (unsigned int i = 0; i < this->synapses.size(); ++i){
+    //   for (unsigned int s = 0; s < this->synapses[i].size(); ++s){
+    //     delete this->synapses[i][s]->weight;
+    //     delete this->synapses[i][s]->weight_delta;
+    //   }
+    //   this->synapses[i].clear();
+    // }
+    // this->nodes.clear();
+    // this->synapses.clear();
+
+    // if (f.is_open()){
+    //   // loop through each line in the file
+    //   while (getline(f, line)){
+    //     // Begin reading in nodes
+    //     if (!reading_nodes && !reading_synapses && line == "nodes{"){
+    // 	reading_nodes = true;
+    // 	// between nodes
+    //     }else if (reading_nodes && !in_node){
+    // 	// if you close a brace while between nodes, clearly the node list has ended
+    // 	if (line == "}"){
+    // 	  reading_nodes = false;
+    // 	}else{
+    // 	  // Retrieve the name of the node, which tells you where it should go
+    // 	  ParseNodeName(line.substr(0,line.find("{")), &active, &layer, &node_number);
+    // 	  // check that the node will actually go in the right place
+    // 	  if (this->nodes[layer].size() == node_number){
+    // 	    // choose the type of node based on its name
+    // 	    if (active){
+    // 	      this->AddNode(layer, act_func, act_deriv);
+    // 	    }else{
+    // 	      this->AddNode(layer);
+    // 	    }
+    // 	  }else{
+    // 	    // freak out if it wont go in the right place
+    // 	    return 1;
+    // 	  }
+    // 	  in_node = true;
+    // 	  ss.str("");
+    // 	  // Start recording the node data
+    // 	  ss << line << "::";
+    // 	}
+    // 	// the bulk of reading in the nodes
+    //     }else if(reading_nodes && in_node){
+    // 	// check for the end of the node
+    // 	if (line == "}"){
+    // 	  in_node = false;
+    // 	  ss << line << "::";
+    // 	  // when you've reached the end use the node's built in code for re-loading itself
+    // 	  this->nodes[layer][node_number]->Load(ss.str());
+    // 	  ss.str("");
+    // 	}else{
+    // 	  // Add each line that is part of the node data to this object, it will then be passed to the node
+    // 	  ss << line << "::";
+    // 	}
+    // 	// Start reading in the synapses
+    //     }else if (!reading_nodes && !reading_synapses && line == "synapses{"){
+    // 	reading_synapses = true;
+    // 	// between synapses
+    //     }else if (reading_synapses && !in_synapse){
+    // 	// The end of the synapses
+    // 	if (line == "}"){
+    // 	reading_synapses = false;
+    // 	// this orders the synapses into groups
+    // 	}else if (line.substr(0,4) == "step"){
+    // 	  Get(line, &step);
+    // 	}else{
+    // 	  // if you are now in a synapse, set th counter to 0
+    // 	  step_in_synapse = 0;
+    // 	  in_synapse = true;
+    // 	}
+    // 	// Read the info for a synapse
+    //     }else if (reading_synapses && in_synapse){
+    // 	// check for the end of the synapse
+    // 	if (line == "}"){
+    // 	  in_synapse = false;
+    // 	  // Create the synapse with the data you collected
+    // 	  AddSynapse(step, this->nodes[source_layer][source_node_number], this->nodes[sink_layer][sink_node_number]);
+    // 	  // set its weight parameters
+    // 	  *this->synapses[step][this->synapses[step].size()-1]->weight = synapse_weight;
+    // 	  *this->synapses[step][this->synapses[step].size()-1]->weight_delta = synapse_weight_delta;
+    // 	}else{
+    // 	  // Read the appropriate info for the curent counter step
+    // 	  if (step_in_synapse == 0){
+    // 	    Get(line, &node_names);
+    // 	    ParseNodeName(node_names, &active, &source_layer, & source_node_number);
+    // 	  }else if (step_in_synapse == 1){
+    // 	    Get(line, &node_names);
+    // 	    ParseNodeName(node_names, &active, &sink_layer, & sink_node_number);
+    // 	  }else if (step_in_synapse == 2){
+    // 	    Get(line, &synapse_weight);
+    // 	  }else if (step_in_synapse == 3){
+    // 	    Get(line, &synapse_weight_delta);
+    // 	  }
+    // 	  step_in_synapse += 1;
+    // 	}
+    //     }          
+    //   }  
+    // }
+
+
+working verison of backpropogation algorithm
+    // // Holds the change in weight during calculation
+    // double delta;
+  
+    // // Check that the true values are of the proper size
+    // if (true_values.size() != this->nodes[this->nodes.size()-1].size()) {throw 1;}
+
+    // // precalculate values on the nodes that will be useful, and add true values
+    // for (unsigned int i = 1; i < this->nodes.size(); ++i){
+    //   for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+    //     // Calculate the derivative for the signal of each node
+    //     this->nodes[i][n]->Rate();
+    //     // Calculate the error at the output nodes
+    //     if (i == this->nodes.size() - 1){
+    // 	// (Learning rate)(derivative of loss function)(derivative of activation function)
+    // 	delta = learning_rate*this->loss_derivative(true_values[n], *this->nodes[i][n]->output_signal)*(*this->nodes[i][n]->activation_rate);
+    // 	for (unsigned int s = 0; s < this->nodes[i][n]->source_synapses.size(); ++s){
+    // 	  // each synapse records its weight delta which is delta*(activation of the source node for this synapse)
+    // 	  *this->nodes[i][n]->source_synapses[s]->weight_delta = delta*(*this->nodes[i][n]->source_synapses[s]->source_node->output_signal);
+    // 	}
+    //     }
+    //   }
+    // }  
+
+    // // Backpropogate the error through the net
+    // for (unsigned int i = this->nodes.size() - 2; i > 0; --i){
+    //   for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+    //     for (unsigned int s = 0; s < this->nodes[i][n]->source_synapses.size(); ++s){
+    // 	delta = 0;//*this->nodes[i][n]->source_synapses[s]->weight_delta
+    // 	for (unsigned int a = 0; a < this->nodes[i][n]->sink_synapses.size(); ++a){
+    // 	  // Add the error from the above layer of weights. this is the weight on each synapse, multiplied by its error/delta
+    // 	  delta += (*this->nodes[i][n]->sink_synapses[a]->weight_delta)*(*this->nodes[i][n]->sink_synapses[a]->weight);//*this->nodes[i][n]->source_synapses[s]->weight_delta
+    // 	}
+    // 	// Scale by the learning rate, the derivative of the activation function, and the activation that passed through the synapse
+    // 	*this->nodes[i][n]->source_synapses[s]->weight_delta = delta*learning_rate*(*this->nodes[i][n]->activation_rate)*(*this->nodes[i][n]->source_synapses[s]->source_node->output_signal);
+    //     }
+    //   }
+    // }
+  
+    // // Apply the change in weight to each synapse
+    // for (unsigned int i = 0; i < this->synapses.size(); ++i){
+    //   for (unsigned int a = 0; a < this->synapses[i].size(); ++a){
+    //     *this->synapses[i][a]->weight -= *this->synapses[i][a]->weight_delta;
+    //   }
+    // }
