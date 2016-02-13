@@ -23,6 +23,9 @@ namespace CSML{
 
     // Back-Propogate errors through the net
     void BackPropogateErrors();
+
+    // Update weights
+    void Update();
   
   public:
 

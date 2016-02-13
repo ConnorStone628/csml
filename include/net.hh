@@ -2,7 +2,8 @@
 #define __NET__
 
 #include "node.hh"
-#include "synapse.hh"
+#include "dendrite.hh"
+#include "GeneralMethods.hh"
 
 #include <vector>
 #include <string>
@@ -16,15 +17,11 @@ namespace CSML{
 
   class net{
   private:
-
-    // This is the loss function the net will use if you don't specify
-    static double StandardLoss(const double true_value, const double predicted_value);
-    static double StandardLossDerivative(const double true_value, const double predicted_value);
-
-    // This is the activation function the net will use if you don't specify
-    static double StandardActivationFunction(const double z);
-    static double StandardActivationDerivative(const double z);
-        
+    
+    // Unique id for each net
+    static unsigned int n_nets;
+    unsigned int netid;
+    
   protected:
 
     // Vector of layers of nodes
@@ -33,25 +30,19 @@ namespace CSML{
     // Bias node for the net
     node* bias_node;
     
-    // Vector of steps of synapses
-    std::vector< std::vector<synapse*> > synapses;
-
     // Function to calculate loss
-    double (*loss)(double, double);
+    double (*loss_function)(double, double);
     double (*loss_derivative)(double, double);
 
-    // Function to calculate the derivative of the loss
-    double (*activation_function)(double);
-    double (*activation_derivative)(double);
-    
     // Instert a passive node into the net
     virtual void SetShape(const std::vector<unsigned int> _shape);
 
     // Insert a new synapse into the net
-    virtual void AddSynapse(const unsigned int step, node* source_node, node* sink_node);
+    virtual void AddSynapse(node* source_node, node* sink_node);
 
     // Propogate an input signal through the net
     virtual void Propogate(const std::vector<double> input_values);
+    virtual void Propogate();
 
     // Collect the output from the net
     virtual std::vector<double> Output();
@@ -59,21 +50,35 @@ namespace CSML{
     // Reset values on the net
     // i: input to nodes
     // o: output to nodes
-    // w: weights of synapses (and deltas)
+    // b: do this for the bias node as well
     // a: "all"
-    // p: skip passive nodes
     virtual void Reset(const std::string scope = "i");
+
+    // Connects the input layer of this net to the output layer of the sourcenet
+    virtual void Connect(net* sourcenet);
+    
+    // Sets the activation function for every node
+    virtual void SetActivationFunction(double (*act_func)(double), double (*act_deriv)(double));
+
+    // Sets the kernel funciton for every dendrite
+    virtual void SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*));
     
   public:
 
     // Default constructor
     net();
-    
-    // Constructor with activation function and its derivative
-    net(double (*act_func)(double), double (*act_deriv)(double));
 
     // Destructor
     ~net();
+
+    // Returns the shape of the net
+    virtual std::vector<unsigned int> Shape();
+
+    // Returns a vector of nodes at the selected layer
+    virtual std::vector<node*> GetNodes(const unsigned int layer){return this->nodes[layer];}
+
+    // Returns the id of this net
+    unsigned int GetId(){return this->netid;}
 
   };
 

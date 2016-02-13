@@ -3,6 +3,8 @@
 
 namespace CSML{
 
+  unsigned int net::n_nets = 0;
+
   ////////////////////////////////////////////////////////////////////////////////
   net::net(){
 
@@ -10,37 +12,17 @@ namespace CSML{
     srand(time(NULL));
   
     // Initialize the loss function with the standard loss
-    this->loss = StandardLoss;
-    this->loss_derivative = StandardLossDerivative;
-
-    // Initialize the activation function to standard
-    this->activation_function = StandardActivationFunction;
-    this->activation_derivative = StandardActivationDerivative;
+    this->loss_function = GM::StandardLossF;
+    this->loss_derivative = GM::StandardLossDp;
 
     // Create the bias node
-    this->bias_node = new node("BN");
+    this->bias_node = new node();
     *this->bias_node->input_signal = 1;
-    
-  }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  net::net(double (*act_func)(double), double (*act_deriv)(double)){
+    // Unique ID for this net
+    this->netid = net::n_nets;
+    net::n_nets++;
 
-    //Seed the random number generator
-    srand(time(NULL));
-  
-    // Initialize the loss function with the standard loss
-    this->loss = StandardLoss;
-    this->loss_derivative = StandardLossDerivative;
-
-    // Initialize the activation function to standard
-    this->activation_function = act_func;
-    this->activation_derivative = act_deriv;
-    
-    // Create the bias node
-    this->bias_node = new node("BN");
-    *this->bias_node->input_signal = 1;
-    
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -53,60 +35,32 @@ namespace CSML{
     for (unsigned int i = 0; i < this->nodes.size(); ++i){
       this->nodes[i].clear();
     }
-
-    // Delete all the synapses
-    for (unsigned int i = 0; i < this->synapses.size(); ++i){
-      for (unsigned int s = 0; s < this->synapses[i].size(); ++s){
-	// The weights must be deleted separately
-	delete this->synapses[i][s]->weight;
-	delete this->synapses[i][s]->weight_delta;
-      }
-      this->synapses[i].clear();
-    }
-
+    
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   void net::SetShape(const std::vector<unsigned int> _shape){
 
-    std::stringstream ss;
+    // Clear the net
+    this->nodes.clear();
     
+    // Set the number of layers
     this->nodes.resize(_shape.size());
 
+    // add the right number of nodes in each layer
     for (unsigned int i = 0; i < _shape.size(); ++i){
       for (unsigned int n = 0; n < _shape[i]; ++n){
-	ss.str("");
-	ss << "AL" << i << "N" << n;
-	this->nodes[i].push_back(new node(ss.str(), this->activation_function, this->activation_derivative));
+	this->nodes[i].push_back(new node());
       }
     }
     
   }
   
   ////////////////////////////////////////////////////////////////////////////////
-  void net::AddSynapse(const unsigned int step, node* source, node* sink){
+  void net::AddSynapse(node* source, node* sink){
 
-    // Ensure there are enough steps to include this synapse, add a step if necessary
-    if (step + 1 >= this->synapses.size()){
-      this->synapses.resize(step+1);
-    }
-
-    // Add the synapse to its step
-    this->synapses[step].push_back(new synapse);
-
-    // Initialize the synapse with its source node, sink node, and weight parameters
-    this->synapses[step][this->synapses[step].size()-1]->source_node = source;
-    this->synapses[step][this->synapses[step].size()-1]->sink_node = sink;
-    this->synapses[step][this->synapses[step].size()-1]->weight = new double;
-    this->synapses[step][this->synapses[step].size()-1]->weight_delta = new double;
-
-    // Initialize a random weight, and a zero delta
-    *this->synapses[step][this->synapses[step].size()-1]->weight = -1.0 + (rand() % 10000 + 0.5)/5000.0;
-    *this->synapses[step][this->synapses[step].size()-1]->weight_delta = 0;
-
-    // Inform the source and sink nodes of this synapse
-    source->sink_synapses.push_back(this->synapses[step][this->synapses[step].size()-1]);
-    sink->source_synapses.push_back(this->synapses[step][this->synapses[step].size()-1]);
+    // Tell the dendrite to add the given source
+    sink->source_dendrite->Synapse(source);
   
   }
 
@@ -118,7 +72,7 @@ namespace CSML{
 
     // collect the output signals from each output node
     for (unsigned int i = 0; i < this->nodes[this->nodes.size() - 1].size(); ++i){
-      output_signals[i] = *(this->nodes[this->nodes.size() - 1][i]->output_signal);
+      output_signals[i] = *this->nodes[this->nodes.size() - 1][i]->output_signal;
     }
 
     return output_signals;
@@ -132,8 +86,8 @@ namespace CSML{
     if (input_values.size() != this->nodes[0].size()){throw 1;}
 
     // Write the input value to each input node
-    for (unsigned int i = 1; i < this->nodes[0].size(); ++i){
-      *(this->nodes[0][i]->input_signal) = input_values[i-1];
+    for (unsigned int i = 0; i < this->nodes[0].size(); ++i){
+      *this->nodes[0][i]->input_signal += input_values[i];
     }
 
     // Fire the bias node
@@ -142,8 +96,22 @@ namespace CSML{
     // Fire each node to send its signal through its synapses
     for (unsigned int i = 0; i < this->nodes.size(); ++i){
       for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
-	// Apply the activation function
-	this->nodes[i][n]->Activate();
+	// Send the signal to its output nodes
+	this->nodes[i][n]->Fire();
+      }
+    }
+    
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::Propogate(){
+
+    // Fire the bias node
+    this->bias_node->Fire();
+    
+    // Fire each node to send its signal through its synapses
+    for (unsigned int i = 0; i < this->nodes.size(); ++i){
+      for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
 	// Send the signal to its output nodes
 	this->nodes[i][n]->Fire();
       }
@@ -156,66 +124,79 @@ namespace CSML{
 
     // reset input signals
     if (scope.find("i") != std::string::npos || scope.find("a") != std::string::npos){
+      if (scope.find("b") != std::string::npos){*this->bias_node->input_signal = 0;}
       for (unsigned int i = 0; i < this->nodes.size(); ++i){    
 	for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
-	  if (scope.find("p") != std::string::npos && this->nodes[i][n]->passive){continue;}
-	  *(this->nodes[i][n]->input_signal) = 0;
+	  *this->nodes[i][n]->input_signal = 0;
 	}
       }
     }
 
     // Reset output signals
     if (scope.find("o") != std::string::npos || scope.find("a") != std::string::npos){
+      if (scope.find("b") != std::string::npos){*this->bias_node->output_signal = 0;}      
       for (unsigned int i = 0; i < this->nodes.size(); ++i){    
 	for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
-	  if (scope.find("p") != std::string::npos && this->nodes[i][n]->passive){continue;}
-	  *(this->nodes[i][n]->output_signal) = 0;
+	  *this->nodes[i][n]->output_signal = 0;
 	}
       }
     }
+    
+  }
 
-    // Reset weights
-    if (scope.find("w") != std::string::npos || scope.find("a") != std::string::npos){
-      for (unsigned int i = 0; i < this->synapses.size(); ++i){    
-	for (unsigned int n = 0; n < this->synapses[i].size(); ++n){
-	  *(this->synapses[i][n]->weight) = 0;
-	  *(this->synapses[i][n]->weight_delta) = 0;
-	}
-      }      
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::Connect(net* sourcenet){
+
+    // Get the output layer of the source net
+    std::vector<node*> sourcenodes = sourcenet->GetNodes(sourcenet->Shape().size() -1);
+
+    // Fully connect the output layer with this net's input layer
+    for (unsigned int i = 0; i < sourcenodes.size(); ++i){
+      for (unsigned int o = 0; o < this->nodes[0].size(); ++o){
+	this->AddSynapse(sourcenodes[i], this->nodes[0][o]);
+      }
     }
     
   }
-  
+
   ////////////////////////////////////////////////////////////////////////////////
-  double net::StandardLoss(const double true_value, const double predicted_value){
+  std::vector<unsigned int> net::Shape(){
 
-    // Squared difference
-    return pow(true_value - predicted_value, 2);
-  
-  }
-  
-  ////////////////////////////////////////////////////////////////////////////////
-  double net::StandardLossDerivative(const double true_value, const double predicted_value){
+    // Create vector to hold the shape
+    std::vector<unsigned int> S(this->nodes.size());
 
-    // Just the derivative
-    return 2*(predicted_value - true_value);
-  
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////  
-  double net::StandardActivationFunction(const double z){
-
-    // sigmoid
-    return 1.0/(1+exp(-1*z));
+    // Add the number of nodes in each layer
+    for (unsigned int i = 0; i < this->nodes.size(); ++i){
+      S[i] = this->nodes[i].size();
+    }
+    
+    return S;
     
   }
 
-  ////////////////////////////////////////////////////////////////////////////////  
-  double net::StandardActivationDerivative(const double z){
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::SetActivationFunction(double (*act_func)(double), double (*act_deriv)(double)){
 
-    // signmoid derivative
-    return exp(-1*z)/pow(1+exp(-1*z),2);
+    // Give each node the activation function
+    for (unsigned int i = 0; i < this->nodes.size(); ++i){
+      for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+	this->nodes[i][n]->SetActivationFunction(act_func, act_deriv);
+      }
+    }
     
-  }  
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*)){
+
+    // Give each node the kernel function
+    for (unsigned int i = 0; i < this->nodes.size(); ++i){
+      for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+	this->nodes[i][n]->source_dendrite->SetKernel(kernel, derivative_a, derivative_w);
+      }
+    }
+
+  }
+
   
 }

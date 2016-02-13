@@ -19,7 +19,7 @@ namespace CSML{
     // MULTI: vector of labels per feature vector
     std::string labeltype;
 
-    // The size of each label vector, if labeltype == MULTI, else -1
+    // The size of each label vector, if labeltype == MULTI, else 0
     unsigned int labelsize;
   
     // The size of each feature vector
@@ -55,16 +55,29 @@ namespace CSML{
     virtual void AddElement(const std::vector<double> _X, const double _y);
     virtual void AddElement(const std::vector<double> _X);
 
-    // Add these data points to the set
-    virtual void AddElements(const std::vector< std::vector<double> > _X, const std::vector< std::vector<double> > _y);
-    virtual void AddElements(const std::vector< std::vector<double> > _X, const std::vector<double> _y);
-    virtual void AddElements(const std::vector< std::vector<double> > _X);
-
     // Let the learner guess at the labels
     virtual void SetHypothesis(const std::vector< std::vector<double> > _h);
     virtual void SetHypothesis(const std::vector<double> _h);
     
+    // Get the number of elements in the data set
+    virtual unsigned int GetSize(){return this->X.size();}
+
+    // Get an element from the data set
+    virtual std::vector<double>* GetElement(unsigned int i){return &this->X[i];}
+    virtual double GetLabel(unsigned int i){return this->y1[i];}
+    virtual std::vector<double>* GetLabelV(unsigned int i){return &this->y2[i];}
+    
+    // Get the type of label ascociated with each feature vector
+    virtual std::string GetLabelType(){return this->labeltype;}
+  
+    // Save the data
+    virtual std::string Save();
+
+    // Re-load the data
+    virtual void Load(const std::string values);
+
     // Process the data:
+    //--------------------------------------------------------------------------------
     // Normalize each feature vector
     virtual void NormalizeData(const std::string normtype = "L2");
     // Scale the feature vector
@@ -77,22 +90,8 @@ namespace CSML{
     virtual double STDLabel(const int l = -1);
     // Calculate squared loss on hypothesis
     virtual double TotalLoss();
-    virtual std::vector<double> FeatureLoss();
-
-    // Get access to the data
-    virtual std::vector< std::vector<double> >* GetFeatures();
-    virtual std::vector< std::vector<double> >* GetLabelsVV();
-    virtual std::vector<double>* GetLabelsV();
-
-    // Get the type of label ascociated with each feature vector
-    virtual std::string GetLabelType();
-  
-    // Save the data
-    virtual std::string Save();
-
-    // Re-load the data
-    virtual void Load(const std::string values);
-  
+    virtual std::vector<double> FeatureLoss();    
+    
   };
 
 }

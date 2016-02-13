@@ -77,33 +77,6 @@ namespace CSML{
 
 
   ////////////////////////////////////////////////////////////////////////////////
-  void data::AddElements(const std::vector< std::vector<double> > _X, const std::vector< std::vector<double> > _y){
-
-    for (unsigned int i = 0; i < _X.size(); ++i){
-      this->AddElement(_X[i], _y[i]);
-    }
-
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  void data::AddElements(const std::vector< std::vector<double> > _X, const std::vector<double> _y){
-
-    for (unsigned int i = 0; i < _X.size(); ++i){
-      this->AddElement(_X[i], _y[i]);
-    }
-
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  void data::AddElements(const std::vector< std::vector<double> > _X){
-
-    for (unsigned int i = 0; i < _X.size(); ++i){
-      this->AddElement(_X[i]);
-    }
-
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
   void data::SetHypothesis(const std::vector< std::vector<double> > _h){
 
     if (!(this->labeltype == "NONE" || this->labeltype == "MULTI")){throw 2;}
@@ -250,38 +223,6 @@ namespace CSML{
     }else{
       throw 2;
     }
-  
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  std::vector< std::vector<double> >* data::GetFeatures(){
-
-    return &this->X;
-  
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  std::vector< std::vector<double> >* data::GetLabelsVV(){
-
-    if (this->labeltype != "MULTI"){throw 2;}
-  
-    return &this->y2;
-  
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  std::vector<double>* data::GetLabelsV(){
-
-    if (this->labeltype != "SINGLE"){throw 2;}
-  
-    return &this->y1;
-  
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  std::string data::GetLabelType(){
-
-    return this->labeltype;
   
   }
 
