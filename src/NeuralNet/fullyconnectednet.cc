@@ -68,7 +68,7 @@ namespace CSML{
       for (unsigned int f = 0; f < _X->GetSize(); ++f){
 	this->Reset("i");
 	this->Propogate(*_X->GetElement(f));
-	this->TopErrors(*_X->GetLabelV(f));
+	this->TopErrors(*_X->GetLabel(f));
 	this->BackPropogateErrors();
 	this->Update();
       }
@@ -79,15 +79,11 @@ namespace CSML{
   ////////////////////////////////////////////////////////////////////////////////
   void fullyconnectednet::Predict(data* _X){
     
-    std::vector< std::vector<double> > h(_X->GetSize());
-    
     for (unsigned int i = 0; i < _X->GetSize(); ++i){
 	this->Reset("i");
 	this->Propogate(*_X->GetElement(i));
-	h[i] = this->Output();
+	_X->SetHypothesis(i, this->Output());
     }
-    
-    _X->SetHypothesis(h);
 
   }
 
