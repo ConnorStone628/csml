@@ -8,20 +8,19 @@ namespace CSML{
   ////////////////////////////////////////////////////////////////////////////////
   node::node(){
 
-    this->source_dendrite = new dendrite(this);
-    
-    // Holds the total signal comming in from input synapses
-    this->input_signal = new double;
-    *this->input_signal = 0;
-
     // Holds the result of activation on the input_signal
-    this->output_signal = new double;
-    *this->output_signal = 0;
+    this->kernel_output = new double;
+    *this->kernel_output = 0;
 
-    // Set the functions
-    this->activation_function = GM::StandardActivationF;
-    this->activation_derivative = GM::StandardActivationD;
+    // Set the default kernels
+    this->kernel_function = GM::StandardKernelF;
+    this->kernel_derivative_a = GM::StandardKernelDa;
+    this->kernel_derivative_w = GM::StandardKernelDw;
 
+    // Set the default learning rate
+    this->learning_rate = 1;
+    this->delta = 0;
+    
     // Each node gets a unique id
     this->nodeid = this->n_nodes;
     this->n_nodes++;
@@ -32,44 +31,52 @@ namespace CSML{
   node::~node(){
 
     // Eliminate all newly created variables
-    delete this->input_signal;
-    delete this->output_signal;
-    delete this->source_dendrite;
+    delete this->kernel_output;
 
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  void node::Fire(){
+  void dendrite::Synapse(node* source){
 
-    // Collect the signal from the previous layer
-    *this->input_signal += this->source_dendrite->Kernel();
+    // Every node that provides for the signal
+    this->source_nodes.push_back(source);
+    // Weight vector for the kernel
+    this->weights.push_back(new double);
+    // Output from the source nodes, for the kernel
+    this->activations.push_back(source->kernel_output);
 
-    // Apply the activation function to the input_signal
-    *this->output_signal = this->ActivationF();
-
+    this->nodeid_map[source->GetId()] = this->weights.size()-1;
   }
-
+  
   ////////////////////////////////////////////////////////////////////////////////
   void node::BackPropogate(){
 
-    double delta = 0;
+    this->delta = 0;
 
     // Backpropogate error through the signal function
-    for (unsigned int i = 0; i < this->sink_dendrites.size(); ++i){
-      delta += this->sink_dendrites[i]->GetDelta()*this->sink_dendrites[i]->KernelDA(this->nodeid);//sink_indexes[i] fixme deleteme
+    for (unsigned int i = 0; i < this->sink_nodes.size(); ++i){
+      delta += this->sink_nodes[i]->delta*this->sink_nodes[i]->KernelDA(this->nodeid);
     }
-
-    // Backpropogate error through the node activation function
-    this->source_dendrite->SetDelta(delta*this->ActivationD());
 
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  void node::SetActivationFunction(double (*act_func)(double), double (*act_deriv)(double)){
+  void node::SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*)){
 
-    this->activation_function = act_func;
-    this->activation_derivative = act_deriv;
+    this->kernel_function = kernel;
+    this->kernel_derivative_a = derivative_a;
+    this->kernel_derivative_w = derivative_w;
     
   }
 
+  ////////////////////////////////////////////////////////////////////////////////
+  void dendrite::Update(){
+
+    // BackPropogate through the kernel to update each weight
+    for (unsigned int i = 0; i < this->weights.size(); ++i){
+      *this->weights[i] -= this->learning_rate*this->delta*this->KernelDW(i);
+    }
+    
+  }
+  
 }

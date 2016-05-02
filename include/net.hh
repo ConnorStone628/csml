@@ -38,31 +38,15 @@ namespace CSML{
     virtual void SetShape(const std::vector<unsigned int> _shape);
 
     // Insert a new synapse into the net
-    virtual void AddSynapse(node* source_node, node* sink_node);
+    virtual void AddSynapse(node* source_node, node* sink_node){sink->Synapse(source);};
 
     // Propogate an input signal through the net
     virtual void Propogate(const std::vector<double> input_values);
     virtual void Propogate();
 
-    // Collect the output from the net
-    virtual std::vector<double> Output();
+    // Reset output values on the net
+    virtual void Reset();
 
-    // Reset values on the net
-    // i: input to nodes
-    // o: output to nodes
-    // b: do this for the bias node as well
-    // a: "all"
-    virtual void Reset(const std::string scope = "i");
-
-    // Connects the input layer of this net to the output layer of the sourcenet
-    virtual void Connect(net* sourcenet);
-    
-    // Sets the activation function for every node
-    virtual void SetActivationFunction(double (*act_func)(double), double (*act_deriv)(double));
-
-    // Sets the kernel funciton for every dendrite
-    virtual void SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*));
-    
   public:
 
     // Default constructor
@@ -79,6 +63,12 @@ namespace CSML{
 
     // Returns the id of this net
     unsigned int GetId(){return this->netid;}
+
+    // Sets the kernel funciton for every dendrite
+    virtual void SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*));
+    
+    // Collect the output from the net
+    virtual std::vector<double> Output();
 
   };
 
