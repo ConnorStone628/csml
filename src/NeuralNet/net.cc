@@ -17,7 +17,7 @@ namespace CSML{
 
     // Create the bias node
     this->bias_node = new node();
-    *this->bias_node->input_signal = 1;
+    *this->bias_node->kernel_output = 1;
 
     // Unique ID for this net
     this->netid = net::n_nets;
@@ -35,6 +35,7 @@ namespace CSML{
     for (unsigned int i = 0; i < this->nodes.size(); ++i){
       this->nodes[i].clear();
     }
+    this->nodes.clear();
     
   }
 
@@ -42,7 +43,6 @@ namespace CSML{
   void net::SetShape(const std::vector<unsigned int> _shape){
 
     // Clear the net
-    // Delete all the nodes
     for (unsigned int i = 0; i < this->nodes.size(); ++i){
       this->nodes[i].clear();
     }
@@ -68,7 +68,7 @@ namespace CSML{
 
     // collect the output signals from each output node
     for (unsigned int i = 0; i < this->nodes[this->nodes.size() - 1].size(); ++i){
-      output_signals[i] = *this->nodes[this->nodes.size() - 1][i]->kernel_output;
+      output_signals[i] = *this->nodes[this->nodes.size() - 1][i]->GetOutput();
     }
 
     return output_signals;
@@ -95,6 +95,21 @@ namespace CSML{
       for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
 	// Send the signal to its output nodes
 	this->nodes[i][n]->Fire();
+      }
+    }
+    
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::BackPropogate(std:vector<double> true_values){
+
+    for (unsigned int n = 0; n < true_values.size(); ++n){
+      this->nodes[this->nodes.size()-1][n]->delta = this->loss_derivative(true_values[n], this->nodes[this->nodes.size()-1][n]->GetOutput());
+    }
+    
+    for (unsigned int i = this->nodes.size()-1; i >= 0; --i){
+      for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+	this->nodes[i][n]->BackPropogate();
       }
     }
     
@@ -137,6 +152,19 @@ namespace CSML{
       }
     }
 
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  double net::Loss(std::vector<double> true_values){
+
+    double total = 0;
+    
+    for (unsigned int n = 0; n < true_values.size(); ++n){
+      total += this->loss_function(true_values[n], this->nodes[this->nodes.size()-1][n]->GetOutput());
+    }
+
+    return total;
+    
   }
 
   

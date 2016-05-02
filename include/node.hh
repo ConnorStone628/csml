@@ -16,8 +16,8 @@ namespace CSML{
 
     // Function that determines how the node collects the input signal
     double (*kernel_function)(std::vector<double*>*, std::vector<double*>*);
-    double (*kernel_derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*);
-    double (*kernel_derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*);
+    double (*kernel_derivative_a)(unsigned int, double, std::vector<double*>*, std::vector<double*>*);
+    double (*kernel_derivative_w)(unsigned int, double, std::vector<double*>*, std::vector<double*>*);
 
     // Unique id for each node
     static unsigned int n_nodes;
@@ -26,10 +26,15 @@ namespace CSML{
     // This maps the unique node_id's to their appropriate element of the weight vector
     std::map<unsigned int, unsigned int> nodeid_map;
 
-  public:
+  protected:
 
     // Represents the signal comming into the node, this is what is passed to the activation function
     double *kernel_output;
+
+    // Error at this node, scale factor for weight updates
+    double delta, learning_rate;
+
+  public:
 
     // Dendrites which recieve signal from this node
     std::vector<node*> source_nodes, sink_nodes;
@@ -37,10 +42,7 @@ namespace CSML{
     // Weights associated with each source node ("activations" is the output of those nodes)
     std::vector<double*> weights, activations;
 
-    // Error at this node, scale factor for weight updates
-    double delta, learning_rate;
-
-    // Initialize node as a passive/input node
+    // Initialize node
     node();
   
     // Destructor
@@ -59,19 +61,23 @@ namespace CSML{
     virtual double Kernel(){return (*this->kernel_function)(&this->activations, &this->weights);}
     
     // Compute the derivative of the kernel wrt one of the activations
-    virtual double KernelDA(unsigned int id){return (*this->kernel_derivative_a)(this->nodeid_map[id], &this->activations, &this->weights);}
+    virtual double KernelDA(unsigned int id){return (*this->kernel_derivative_a)(this->nodeid_map[id], *this->kernel_output, &this->activations, &this->weights);}
 
     // Compute the derivative of the kernel wrt one of the weights
-    virtual double KernelDW(unsigned int id){return (*this->kernel_derivative_w)(this->nodeid_map[id], &this->activations, &this->weights);}
+    virtual double KernelDW(unsigned int id){return (*this->kernel_derivative_w)(this->nodeid_map[id], *this->kernel_output, &this->activations, &this->weights);}
 
-    // Changes the node to be active
-    virtual void SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*));
-
-    // Get this node's id
+    // Get this node parameters
     virtual unsigned int GetId(){return this->nodeid;}
+    virtual double* GetOutput(){return this->kernel_output;}
+    virtual double* GetDelta(){return this->delta;}
 
     // Update the weights for this node
     virtual void Update();
+
+    // Set node parameters
+    virtual void SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, double, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, double, std::vector<double*>*, std::vector<double*>*));
+    virtual void SetDelta(double _delta){this->delta = _delta;}
+    virtual void SetLearningRate(double _learning_rate){this->learning_rate = _learning_rate;}
     
   };
 

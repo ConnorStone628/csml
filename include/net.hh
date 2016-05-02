@@ -30,7 +30,7 @@ namespace CSML{
     // Bias node for the net
     node* bias_node;
     
-    // Function to calculate loss
+    // Function to calculate loss (true value, predicted value)
     double (*loss_function)(double, double);
     double (*loss_derivative)(double, double);
 
@@ -38,11 +38,14 @@ namespace CSML{
     virtual void SetShape(const std::vector<unsigned int> _shape);
 
     // Insert a new synapse into the net
-    virtual void AddSynapse(node* source_node, node* sink_node){sink->Synapse(source);};
+    virtual void AddSynapse(node* source, node* sink){sink->Synapse(source);};
 
     // Propogate an input signal through the net
     virtual void Propogate(const std::vector<double> input_values);
     virtual void Propogate();
+
+    // Standard backpropogation algorithm for layered nets
+    virtual void BackPropogate(std::vector<double> true_values);
 
     // Reset output values on the net
     virtual void Reset();
@@ -69,6 +72,9 @@ namespace CSML{
     
     // Collect the output from the net
     virtual std::vector<double> Output();
+
+    // Calculates the loss of true values to predicted
+    virtual double Loss();
 
   };
 

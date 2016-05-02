@@ -43,7 +43,7 @@ namespace CSML{
     // Weight vector for the kernel
     this->weights.push_back(new double);
     // Output from the source nodes, for the kernel
-    this->activations.push_back(source->kernel_output);
+    this->activations.push_back(source->GetOutput());
 
     this->nodeid_map[source->GetId()] = this->weights.size()-1;
   }
@@ -51,17 +51,19 @@ namespace CSML{
   ////////////////////////////////////////////////////////////////////////////////
   void node::BackPropogate(){
 
+    if (this->sink_nodes.empty()){return;}
+    
     this->delta = 0;
 
     // Backpropogate error through the signal function
     for (unsigned int i = 0; i < this->sink_nodes.size(); ++i){
-      delta += this->sink_nodes[i]->delta*this->sink_nodes[i]->KernelDA(this->nodeid);
+      this->delta += this->sink_nodes[i]->GetDelta()*this->sink_nodes[i]->KernelDA(this->nodeid);
     }
 
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  void node::SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, std::vector<double*>*, std::vector<double*>*)){
+  void node::SetKernel(double (*kernel)(std::vector<double*>*, std::vector<double*>*), double (*derivative_a)(unsigned int, double, std::vector<double*>*, std::vector<double*>*), double (*derivative_w)(unsigned int, double, std::vector<double*>*, std::vector<double*>*)){
 
     this->kernel_function = kernel;
     this->kernel_derivative_a = derivative_a;
@@ -71,6 +73,8 @@ namespace CSML{
 
   ////////////////////////////////////////////////////////////////////////////////
   void dendrite::Update(){
+
+    if (this->source_nodes.empty()){return;}
 
     // BackPropogate through the kernel to update each weight
     for (unsigned int i = 0; i < this->weights.size(); ++i){
