@@ -18,15 +18,6 @@ namespace CSML{
     // Number of times to cycle through the data
     unsigned int itterations;
     
-    // Calculate error along the top row
-    void TopErrors(const std::vector<double> true_values);
-
-    // Back-Propogate errors through the net
-    void BackPropogateErrors();
-
-    // Update weights
-    void Update();
-  
   public:
 
     // Constructor

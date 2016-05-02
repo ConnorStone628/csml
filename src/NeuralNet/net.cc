@@ -167,5 +167,14 @@ namespace CSML{
     
   }
 
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::Update(){
+
+    for (unsigned int i = 0; i < this->nodes.size(); ++i){
+      for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
+	this->nodes[i][n]->Update();
+      }
+    }
+  }
   
 }

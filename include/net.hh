@@ -47,6 +47,9 @@ namespace CSML{
     // Standard backpropogation algorithm for layered nets
     virtual void BackPropogate(std::vector<double> true_values);
 
+    // Tell each node to update its weights
+    virtual void Update();
+
     // Reset output values on the net
     virtual void Reset();
 
