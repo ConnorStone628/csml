@@ -21,6 +21,8 @@ namespace CSML{
     // Unique id for each net
     static unsigned int n_nets;
     unsigned int netid;
+
+    virtual void ClearNodes();
     
   protected:
 

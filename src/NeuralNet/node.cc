@@ -9,8 +9,8 @@ namespace CSML{
   node::node(){
 
     // Holds the result of activation on the input_signal
-    this->kernel_output = new double;
-    *this->kernel_output = 0;
+    this->activation = new double;
+    *this->activation = 0;
 
     // Set the default kernels
     this->kernel_function = GM::StandardKernelF;
@@ -18,7 +18,8 @@ namespace CSML{
     this->kernel_derivative_w = GM::StandardKernelDw;
 
     // Set the default learning rate
-    this->learning_rate = 1;
+    this->learning_rate = 0.1;
+    // zero the delta
     this->delta = 0;
     
     // Each node gets a unique id
@@ -31,20 +32,21 @@ namespace CSML{
   node::~node(){
 
     // Eliminate all newly created variables
-    delete this->kernel_output;
+    delete this->activation;
 
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  void dendrite::Synapse(node* source){
+  void node::Synapse(node* source){
 
     // Every node that provides for the signal
     this->source_nodes.push_back(source);
     // Weight vector for the kernel
     this->weights.push_back(new double);
     // Output from the source nodes, for the kernel
-    this->activations.push_back(source->GetOutput());
+    this->activations.push_back(source->GetActivation());
 
+    // Map the space in the vector to the unique id of the node
     this->nodeid_map[source->GetId()] = this->weights.size()-1;
   }
   
@@ -72,7 +74,7 @@ namespace CSML{
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  void dendrite::Update(){
+  void node::Update(){
 
     if (this->source_nodes.empty()){return;}
 

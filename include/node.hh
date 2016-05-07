@@ -2,7 +2,6 @@
 #define __NODE__
 
 #include "GeneralMethods.hh"
-
 #include <vector>
 #include <string>
 #include <stdlib.h>
@@ -29,7 +28,7 @@ namespace CSML{
   protected:
 
     // Represents the signal comming into the node, this is what is passed to the activation function
-    double *kernel_output;
+    double *activation;
 
     // Error at this node, scale factor for weight updates
     double delta, learning_rate;
@@ -52,7 +51,7 @@ namespace CSML{
     virtual void Synapse(node* source);
 
     // Applies the output signal of this node to all of its output nodes
-    virtual void Fire(){if(!this->source_nodes.empty()){*this->kernel_output = this->Kernel();}};
+    virtual void Fire(){if(!this->source_nodes.empty()){*this->activation = this->Kernel();}};
 
     // Collect error
     virtual void BackPropogate();
@@ -61,14 +60,14 @@ namespace CSML{
     virtual double Kernel(){return (*this->kernel_function)(&this->activations, &this->weights);}
     
     // Compute the derivative of the kernel wrt one of the activations
-    virtual double KernelDA(unsigned int id){return (*this->kernel_derivative_a)(this->nodeid_map[id], *this->kernel_output, &this->activations, &this->weights);}
+    virtual double KernelDA(unsigned int id){return (*this->kernel_derivative_a)(this->nodeid_map[id], *this->activation, &this->activations, &this->weights);}
 
     // Compute the derivative of the kernel wrt one of the weights
-    virtual double KernelDW(unsigned int id){return (*this->kernel_derivative_w)(this->nodeid_map[id], *this->kernel_output, &this->activations, &this->weights);}
+    virtual double KernelDW(unsigned int id){return (*this->kernel_derivative_w)(this->nodeid_map[id], *this->activation, &this->activations, &this->weights);}
 
     // Get this node parameters
     virtual unsigned int GetId(){return this->nodeid;}
-    virtual double* GetOutput(){return this->kernel_output;}
+    virtual double* GetActivation(){return this->activation;}
     virtual double* GetDelta(){return this->delta;}
 
     // Update the weights for this node

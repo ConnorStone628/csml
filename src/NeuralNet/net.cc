@@ -17,7 +17,7 @@ namespace CSML{
 
     // Create the bias node
     this->bias_node = new node();
-    *this->bias_node->kernel_output = 1;
+    *this->bias_node->GetActivation() = 1;
 
     // Unique ID for this net
     this->netid = net::n_nets;
@@ -30,23 +30,27 @@ namespace CSML{
 
     // Delete bias node
     delete this->bias_node;
+
+    // Delete the nodes in the layers
+    this->ClearNodes();
     
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  void net::ClearNodes(){
+
     // Delete all the nodes
     for (unsigned int i = 0; i < this->nodes.size(); ++i){
       this->nodes[i].clear();
     }
     this->nodes.clear();
-    
-  }
 
+  }
+  
   ////////////////////////////////////////////////////////////////////////////////
   void net::SetShape(const std::vector<unsigned int> _shape){
 
-    // Clear the net
-    for (unsigned int i = 0; i < this->nodes.size(); ++i){
-      this->nodes[i].clear();
-    }
-    this->nodes.clear();
+    this->ClearNodes();
     
     // Set the number of layers
     this->nodes.resize(_shape.size());
@@ -68,7 +72,7 @@ namespace CSML{
 
     // collect the output signals from each output node
     for (unsigned int i = 0; i < this->nodes[this->nodes.size() - 1].size(); ++i){
-      output_signals[i] = *this->nodes[this->nodes.size() - 1][i]->GetOutput();
+      output_signals[i] = *this->nodes[this->nodes.size() - 1][i]->GetActivation();
     }
 
     return output_signals;
@@ -80,7 +84,7 @@ namespace CSML{
 
     // Write the input value to each input node
     for (unsigned int i = 0; i < this->nodes[0].size(); ++i){
-      *this->nodes[0][i]->kernel_output += input_values[i];
+      *this->nodes[0][i]->GetActivation() += input_values[i];
     }
 
     this->Propogate();
@@ -103,11 +107,13 @@ namespace CSML{
   ////////////////////////////////////////////////////////////////////////////////
   void net::BackPropogate(std:vector<double> true_values){
 
-    for (unsigned int n = 0; n < true_values.size(); ++n){
-      this->nodes[this->nodes.size()-1][n]->delta = this->loss_derivative(true_values[n], this->nodes[this->nodes.size()-1][n]->GetOutput());
+    unsigned int last_layer = this->nodes.size()-1;
+    
+      for (unsigned int n = 0; n < this->nodes[last_layer].size(); ++n){
+      this->nodes[last_layer][n]->delta = this->loss_derivative(true_values[n], *this->nodes[last_layer][n]->GetActivation());
     }
     
-    for (unsigned int i = this->nodes.size()-1; i >= 0; --i){
+    for (unsigned int i = last_layer; i >= 0; --i){
       for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
 	this->nodes[i][n]->BackPropogate();
       }
@@ -121,7 +127,7 @@ namespace CSML{
     // Reset output signals
     for (unsigned int i = 0; i < this->nodes.size(); ++i){    
       for (unsigned int n = 0; n < this->nodes[i].size(); ++n){
-	*this->nodes[i][n]->kernel_output = 0;
+	*this->nodes[i][n]->GetActivation() = 0;
       }
     }
     
@@ -158,9 +164,10 @@ namespace CSML{
   double net::Loss(std::vector<double> true_values){
 
     double total = 0;
+    unsigned int last_layer = this->nodes.size()-1;
     
     for (unsigned int n = 0; n < true_values.size(); ++n){
-      total += this->loss_function(true_values[n], this->nodes[this->nodes.size()-1][n]->GetOutput());
+      total += this->loss_function(true_values[n], *this->nodes[last_layer][n]->GetActivation());
     }
 
     return total;
