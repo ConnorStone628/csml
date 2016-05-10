@@ -12,10 +12,10 @@ namespace CSML{
     this->activation = new double;
     *this->activation = 0;
 
-    // Set the default kernels
-    this->kernel_function = GM::StandardKernelF;
-    this->kernel_derivative_a = GM::StandardKernelDa;
-    this->kernel_derivative_w = GM::StandardKernelDw;
+    // Set the default kernel
+    this->kernel_function = GM::LogisticKernelF;
+    this->kernel_derivative_a = GM::LogisticKernelDa;
+    this->kernel_derivative_w = GM::LogisticKernelDw;
 
     // Set the default learning rate
     this->learning_rate = 0.1;
